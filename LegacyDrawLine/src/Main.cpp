@@ -7,13 +7,20 @@
 
 #include "Line.h"
 
+// initial setting
 int SCR_WIDTH = 800;
 int SCR_HEIGHT = 800;
+int* pStart = new int[2]{ 0, 0 };
+int* pFinal = new int[2]{ 0, 0 };
 
 static void glfw_error_callback(int error, const char* description)
 {
     fprintf(stderr, "Glfw Error %d: %s\n", error, description);
 }
+
+//void mouse_callback(GLFWwindow* window, int button, int action, int mods);
+void processInput(GLFWwindow* window);
+void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 
 int main(void)
 {
@@ -35,6 +42,7 @@ int main(void)
     }
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1); // Enable vsync
+    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
@@ -90,9 +98,6 @@ int main(void)
         0x00000f,
     };
 
-    int pStart[2] = { 0,100 };
-    int pFinal[2] = { 1000,100 };
-
     std::vector<Line*> onScreen;
 
     // Main loop
@@ -104,6 +109,7 @@ int main(void)
         // - When io.WantCaptureKeyboard is true, do not dispatch keyboard input data to your main application.
         // Generally you may always pass all inputs to dear imgui, and hide them from your application based on those two flags.
         glfwPollEvents();
+        processInput(window);
 
         // Start the Dear ImGui frame
         ImGui_ImplOpenGL2_NewFrame();
@@ -113,18 +119,17 @@ int main(void)
         {
             ImGui::Begin("Draw Line"); // Create a window called "Hello, world!" and append into it.
             ImGui::ColorEdit4("Background color", clear_color); // RGBA
-            ImGui::ColorEdit3("Line color", line_color); // RGB
 
             ImGui::Text("These settings are applied on the next draw");
             ImGui::InputInt2("Starting point", pStart);
             ImGui::InputInt2("Final point", pFinal);
-
+            ImGui::ColorEdit3("Line color", line_color); // RGB
             ImGui::SliderInt("Line width", &lineWidth, 1, 5);
 
             ImGui::Combo("Pixel Spacing", &spacing_current, spacing, IM_ARRAYSIZE(spacing));
             if (ImGui::Button("Draw line"))
             {
-                Line* newLine = new Line(pStart, pFinal, SCR_WIDTH, SCR_HEIGHT, 0xffffff, 5, line_color);
+                Line* newLine = new Line(pStart, pFinal, SCR_WIDTH, SCR_HEIGHT, pattern[spacing_current], lineWidth, line_color);
                 onScreen.push_back(newLine);
             }
             ImGui::SameLine();
@@ -213,6 +218,9 @@ int main(void)
         delete onScreen[i];
     }
 
+    delete pStart;
+    delete pFinal;
+
     ImGui_ImplOpenGL2_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
@@ -221,6 +229,46 @@ int main(void)
     glfwTerminate();
 
     return 0;
+}
+
+// process all input: query GLFW whether relevant keys are pressed/released this frame and react accordingly
+// ---------------------------------------------------------------------------------------------------------
+void processInput(GLFWwindow* window)
+{
+    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+        glfwSetWindowShouldClose(window, true);
+
+    if (glfwGetKey(window, GLFW_KEY_Z) == GLFW_PRESS) {
+        double x;
+        double y;
+        glfwGetCursorPos(window, &x, &y);
+
+        // opengl set the coordinate from bottom left while glfw is from top left smh
+        pStart[1] = -1 * (floor(y)) + SCR_HEIGHT;
+        pStart[0] = floor(x);
+    }
+
+    if (glfwGetKey(window, GLFW_KEY_X) == GLFW_PRESS) {
+        double x;
+        double y;
+        glfwGetCursorPos(window, &x, &y);
+
+        // opengl set the coordinate from bottom left while glfw is from top left smh
+        pFinal[1] = -1.0 * (floor(y)) + SCR_HEIGHT;
+        pFinal[0] = floor(x);
+    }
+}
+
+// glfw: whenever the window size changed (by OS or user resize) this callback function executes
+// ---------------------------------------------------------------------------------------------
+void framebuffer_size_callback(GLFWwindow* window, int width, int height)
+{
+    // make sure the viewport matches the new window dimensions; note that width and 
+    // height will be significantly larger than specified on retina displays.
+    glViewport(0, 0, width, height);
+
+    SCR_WIDTH = width;
+    SCR_HEIGHT = height;
 }
 
 //void mouse_callback(GLFWwindow* window, int button, int action, int mods)

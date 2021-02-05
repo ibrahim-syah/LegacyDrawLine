@@ -3,7 +3,9 @@
 #include "vendor/imgui/imgui.h"
 #include "vendor/imgui/imgui_impl_glfw.h"
 #include "vendor/imgui/imgui_impl_opengl2.h"
+#include "vendor/imgui/imfilebrowser.h"
 #include <GLFW/glfw3.h>
+#include <json/json.h>
 
 #include "Line.h"
 
@@ -21,6 +23,8 @@ static void glfw_error_callback(int error, const char* description)
 //void mouse_callback(GLFWwindow* window, int button, int action, int mods);
 void processInput(GLFWwindow* window);
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
+void writeJSON(std::vector<Line*> allLines, float _clear_color[4], std::string filename);
+bool readJSON(std::vector<Line*>* allLines, float _clear_color[4], std::string filename);
 
 int main(void)
 {
@@ -59,21 +63,6 @@ int main(void)
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL2_Init();
 
-    // Load Fonts
-    // - If no fonts are loaded, dear imgui will use the default font. You can also load multiple fonts and use ImGui::PushFont()/PopFont() to select them.
-    // - AddFontFromFileTTF() will return the ImFont* so you can store it if you need to select the font among multiple.
-    // - If the file cannot be loaded, the function will return NULL. Please handle those errors in your application (e.g. use an assertion, or display an error and quit).
-    // - The fonts will be rasterized at a given size (w/ oversampling) and stored into a texture when calling ImFontAtlas::Build()/GetTexDataAsXXXX(), which ImGui_ImplXXXX_NewFrame below will call.
-    // - Read 'docs/FONTS.md' for more instructions and details.
-    // - Remember that in C/C++ if you want to include a backslash \ in a string literal you need to write a double backslash \\ !
-    //io.Fonts->AddFontDefault();
-    //io.Fonts->AddFontFromFileTTF("../../misc/fonts/Roboto-Medium.ttf", 16.0f);
-    //io.Fonts->AddFontFromFileTTF("../../misc/fonts/Cousine-Regular.ttf", 15.0f);
-    //io.Fonts->AddFontFromFileTTF("../../misc/fonts/DroidSans.ttf", 16.0f);
-    //io.Fonts->AddFontFromFileTTF("../../misc/fonts/ProggyTiny.ttf", 10.0f);
-    //ImFont* font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\ArialUni.ttf", 18.0f, NULL, io.Fonts->GetGlyphRangesJapanese());
-    //IM_ASSERT(font != NULL);
-
     // Our initial state
     float clear_color[] = { 1.0f, 1.0f, 1.0f, 1.0f };
     float line_color[] = { 0.0f, 0.0f, 0.0f };
@@ -98,7 +87,18 @@ int main(void)
         0x00000f,
     };
 
-    std::vector<Line*> onScreen;
+    std::vector<Line*> onScreen; // vector to contain all the lines on currently on the screen
+
+    // create a file browser instance
+    ImGui::FileBrowser saveFileDialog(ImGuiFileBrowserFlags_EnterNewFilename);
+    ImGui::FileBrowser loadFileDialog;
+
+    // (optional) set browser properties
+    saveFileDialog.SetTypeFilters({ ".json" });
+    saveFileDialog.SetTitle("Save file");
+
+    loadFileDialog.SetTypeFilters({ ".json" });
+    loadFileDialog.SetTitle("Load file");
 
     // Main loop
     while (!glfwWindowShouldClose(window))
@@ -147,7 +147,7 @@ int main(void)
 
                 onScreen.clear();
             }
-            /*if (ImGui::Button("Save file"))
+            if (ImGui::Button("Save file"))
             {
                 saveFileDialog.Open();
             }
@@ -155,35 +155,38 @@ int main(void)
             if (ImGui::Button("Open file"))
             {
                 loadFileDialog.Open();
-            }*/
+            }
 
             ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
             ImGui::End();
 
-            //saveFileDialog.Display();
-            //loadFileDialog.Display();
+            saveFileDialog.Display();
+            loadFileDialog.Display();
 
-            //if (saveFileDialog.HasSelected())
-            //{
-            //    std::cout << "Creating file: " << saveFileDialog.GetSelected().string() << std::endl;
-            //    *newLine = Line(pStart, pFinal, SCR_WIDTH, SCR_HEIGHT);
-            //    newLine->writeJSON(saveFileDialog.GetSelected().string(), point_size, spacing_current, clear_color, line_color, lineWidth);
+            if (saveFileDialog.HasSelected())
+            {
+                std::cout << "Creating file: " << saveFileDialog.GetSelected().string() << std::endl;
+                writeJSON(onScreen, clear_color, saveFileDialog.GetSelected().string());
 
-            //    saveFileDialog.ClearSelected();
-            //}
+                saveFileDialog.ClearSelected();
+            }
 
-            //if (loadFileDialog.HasSelected())
-            //{
-            //    std::cout << "Selected file: " << loadFileDialog.GetSelected().string() << std::endl;
+            if (loadFileDialog.HasSelected())
+            {
+                std::cout << "Selected file: " << loadFileDialog.GetSelected().string() << std::endl;
 
-            //    // this is really ugly
-            //    *newLine = Line(pStart, pFinal, SCR_WIDTH, SCR_HEIGHT);
-            //    if (newLine->readJSON(loadFileDialog.GetSelected().string(), pStart, pFinal, &point_size, &spacing_current, clear_color, line_color, &lineWidth))
-            //    {
-            //        recalculateVertices(pattern[spacing_current], lineWidth, &numOfPixels, &VAO);
-            //    }
-            //    loadFileDialog.ClearSelected();
-            //}
+                // if something unexpected, just clear the screen
+                if (!readJSON(&onScreen, clear_color, loadFileDialog.GetSelected().string()))
+                {
+                    std::cout << "failed reading file!" << std::endl;
+
+                    clear_color[0] = 1.0f;
+                    clear_color[1] = 1.0f;
+                    clear_color[2] = 1.0f;
+                    clear_color[3] = 1.0f;
+                }
+                loadFileDialog.ClearSelected();
+            }
         }
 
         // Rendering
@@ -294,3 +297,112 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 //        pFinal[0] = floor(x);
 //    }
 //}
+
+void writeJSON(std::vector<Line*> allLines, float _clear_color[4], std::string filename)
+{
+    Json::Value root;
+
+    for (int i = 0; i < allLines.size(); i++)
+    {
+        std::string name = "line" + std::to_string(i);
+
+        root["lines"][name]["scr_width"] = allLines[i]->m_width;
+        root["lines"][name]["scr_height"] = allLines[i]->m_height;
+
+        root["lines"][name]["pStart"]["x"] = allLines[i]->m_pStart[0];
+        root["lines"][name]["pStart"]["y"] = allLines[i]->m_pStart[1];
+        root["lines"][name]["pFinal"]["x"] = allLines[i]->m_pFinal[0];
+        root["lines"][name]["pFinal"]["y"] = allLines[i]->m_pFinal[1];
+
+        root["lines"][name]["line_width"] = allLines[i]->m_line_width;
+
+        root["lines"][name]["pattern"] = allLines[i]->m_pattern;
+
+        root["lines"][name]["line_color"]["R"] = allLines[i]->m_line_color[0];
+        root["lines"][name]["line_color"]["G"] = allLines[i]->m_line_color[1];
+        root["lines"][name]["line_color"]["B"] = allLines[i]->m_line_color[2];
+    }
+
+    root["clear_color"]["R"] = _clear_color[0];
+    root["clear_color"]["G"] = _clear_color[1];
+    root["clear_color"]["B"] = _clear_color[2];
+    root["clear_color"]["A"] = _clear_color[3];
+
+    root["scr_width"] = SCR_WIDTH;
+    root["scr_height"] = SCR_HEIGHT;
+
+    Json::StreamWriterBuilder wbuilder;
+    wbuilder["indentation"] = "\t";
+    std::string document = Json::writeString(wbuilder, root);
+
+    std::fstream file;
+    file.open(filename.c_str(), std::ios::out);
+    if (!file) {
+        std::cout << "File not created!" << std::endl;
+    }
+    else {
+        std::cout << "File created successfully!" << std::endl;
+        file << document << "\n";
+        file.close();
+    }
+}
+
+bool readJSON(std::vector<Line*>* allLines, float _clear_color[4], std::string filename)
+{
+    Json::Value root;
+    Json::CharReaderBuilder rbuilder;
+    rbuilder["collectComments"] = false;
+    std::string errs;
+
+    std::ifstream file;
+    std::cout << filename.c_str() << std::endl;
+    file.open(filename.c_str());
+    if (!file) {
+        std::cout << "File cannot be read!" << std::endl;
+        return false;
+    }
+    else {
+        std::cout << allLines->size() << std::endl;
+        bool ok = Json::parseFromStream(rbuilder, file, &root, &errs);
+
+        for (int i = 0; i < allLines->size(); i++)
+        {
+            delete (*allLines)[i];
+        }
+
+        allLines->clear();
+        std::cout << allLines->size() << std::endl;
+
+        const Json::Value lines = root["lines"];
+
+        for (int i = 0; i < lines.size(); i++)
+        {
+            std::string name = "line" + std::to_string(i);
+
+            int m_width = lines[name]["scr_width"].asInt();
+            int m_height = lines[name]["scr_height"].asInt();
+
+            int m_pStart[2] = { lines[name]["pStart"]["x"].asInt(), lines[name]["pStart"]["y"].asInt() };
+            int m_pFinal[2] = { lines[name]["pFinal"]["x"].asInt(), lines[name]["pFinal"]["y"].asInt() };
+
+            int m_line_width = lines[name]["line_width"].asInt();
+
+            unsigned int m_pattern = lines[name]["pattern"].asUInt();
+
+            float m_line_color[3] = { lines[name]["line_color"]["R"].asFloat(), lines[name]["line_color"]["G"].asFloat(), lines[name]["line_color"]["B"].asFloat() };
+            allLines->push_back(new Line(m_pStart, m_pFinal, m_width, m_height, m_pattern, m_line_width, m_line_color));
+        }
+
+        _clear_color[0] = root["clear_color"]["R"].asFloat();
+        _clear_color[1] = root["clear_color"]["G"].asFloat();
+        _clear_color[2] = root["clear_color"]["B"].asFloat();
+        _clear_color[3] = root["clear_color"]["A"].asFloat();
+
+        SCR_WIDTH = root["scr_width"].asInt();
+        SCR_HEIGHT = root["scr_height"].asInt();
+
+        std::cout << "Read file successfully!" << std::endl;
+        file.close();
+        return true;
+    }
+}

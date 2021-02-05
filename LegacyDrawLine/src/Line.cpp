@@ -14,6 +14,11 @@ Line::~Line()
 {
 }
 
+void Line::Set(float _x, float _y, float _z)
+{
+    glVertex3f(_x, _y, _z);
+}
+
 void Line::convertToNDC(int _x, int _y, float* r_x, float* r_y)
 {
     // convert into opengl Normalized Device Coordinates (NDC) range (-1 to 1)
@@ -25,7 +30,7 @@ void Line::convertToNDC(int _x, int _y, float* r_x, float* r_y)
 // This code is very redundant, there's a lot of code duplication, it's useful to get a 
 // solid understanding of how the algorithm works, but be sure to fix this spaghetti code
 // before shipping it
-std::vector<float> Line::createPoints(const unsigned int _pattern, const int _lineWidth)
+std::vector<float> Line::createPoints(const unsigned int _pattern, const int _lineWidth, const float _line_color[3])
 {
     unsigned int curr_pattern;
     std::vector<float> points = {};
@@ -33,12 +38,14 @@ std::vector<float> Line::createPoints(const unsigned int _pattern, const int _li
     int counter = 0;
     curr_pattern = _pattern;
 
+    glColor3f(_line_color[0], _line_color[1], _line_color[2]);
+
     if (m_pStart[0] == m_pFinal[0] && m_pStart[1] == m_pFinal[1]) // a single point
     {
         float ndc_x, ndc_y;
         this->convertToNDC(m_pStart[0], m_pStart[1], &ndc_x, &ndc_y);
         points = { ndc_x, ndc_y, 0.0f };
-        glVertex3f(ndc_x, ndc_y, 0.0f);
+        Set(ndc_x, ndc_y, 0.0f);
         //std::cout << "case 0 (point)" << std::endl;
     }
     else if (m_pStart[1] == m_pFinal[1]) // horizontal line
@@ -61,7 +68,7 @@ std::vector<float> Line::createPoints(const unsigned int _pattern, const int _li
                     this->convertToNDC(x, yvalue + j, &ndc_x, &ndc_y);
                     std::vector<float> point = { ndc_x, ndc_y, ndc_z };
                     points.insert(points.end(), point.begin(), point.end());
-                    glVertex2f(ndc_x, ndc_y);
+                    Set(ndc_x, ndc_y, ndc_z);
                 }
                 x++;
 

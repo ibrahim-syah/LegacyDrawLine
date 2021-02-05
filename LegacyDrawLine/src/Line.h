@@ -16,7 +16,9 @@ public:
     Line(int _pStart[2], int _pFinal[2], int width, int height);
     ~Line();
 
+    void Set(float _x, float _y, float _z); // Primitive
+
     void convertToNDC(int _x, int _y, float* r_x, float* r_y);
 
-    std::vector<float> createPoints(const unsigned int _pattern, const int _lineWidth);
+    std::vector<float> createPoints(const unsigned int _pattern, const int _lineWidth, const float _line_color[3]);
 };

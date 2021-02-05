@@ -66,13 +66,34 @@ int main(void)
     //ImFont* font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\ArialUni.ttf", 18.0f, NULL, io.Fonts->GetGlyphRangesJapanese());
     //IM_ASSERT(font != NULL);
 
-    // Our state
-    bool show_demo_window = true;
-    bool show_another_window = false;
-    ImVec4 clear_color = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
+    // Our initial state
+    float clear_color[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+    float line_color[] = { 0.0f, 0.0f, 0.0f };
+    //float point_size = 1.0f;
+    int lineWidth = 1;
+    int spacing_current = 0;
+    const char* spacing[] = { // 2^24
+        "0 pixel",
+        "4 pixels",
+        "8 pixel",
+        "12 pixel",
+        "16 pixel",
+        "20 pixel",
+    };
+
+    const unsigned int pattern[] = {
+        0xffffff,
+        0x0fffff,
+        0x00ffff,
+        0x000fff,
+        0x0000ff,
+        0x00000f,
+    };
 
     int pStart[2] = { 0,100 };
     int pFinal[2] = { 1000,100 };
+
+    std::vector<Line*> onScreen;
 
     // Main loop
     while (!glfwWindowShouldClose(window))
@@ -90,38 +111,87 @@ int main(void)
         ImGui::NewFrame();
 
         {
-            static float f = 0.0f;
-            static int counter = 0;
+            ImGui::Begin("Draw Line"); // Create a window called "Hello, world!" and append into it.
+            ImGui::ColorEdit4("Background color", clear_color); // RGBA
+            ImGui::ColorEdit3("Line color", line_color); // RGB
 
-            ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.
+            ImGui::Text("These settings are applied on the next draw");
+            ImGui::InputInt2("Starting point", pStart);
+            ImGui::InputInt2("Final point", pFinal);
 
-            ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
-            ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
-            ImGui::Checkbox("Another Window", &show_another_window);
+            ImGui::SliderInt("Line width", &lineWidth, 1, 5);
 
-            ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
-            ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
-
-            if (ImGui::Button("Button"))                            // Buttons return true when clicked (most widgets return true when edited/activated)
-                counter++;
+            ImGui::Combo("Pixel Spacing", &spacing_current, spacing, IM_ARRAYSIZE(spacing));
+            if (ImGui::Button("Draw line"))
+            {
+                Line* newLine = new Line(pStart, pFinal, SCR_WIDTH, SCR_HEIGHT, 0xffffff, 5, line_color);
+                onScreen.push_back(newLine);
+            }
             ImGui::SameLine();
-            ImGui::Text("counter = %d", counter);
+            if (ImGui::Button("Clear screen"))
+            {
+                clear_color[0] = 1.0f;
+                clear_color[1] = 1.0f;
+                clear_color[2] = 1.0f;
+                clear_color[3] = 1.0f;
+
+                for (int i = 0; i < onScreen.size(); i++)
+                {
+                    delete onScreen[i];
+                }
+
+                onScreen.clear();
+            }
+            /*if (ImGui::Button("Save file"))
+            {
+                saveFileDialog.Open();
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("Open file"))
+            {
+                loadFileDialog.Open();
+            }*/
 
             ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
             ImGui::End();
+
+            //saveFileDialog.Display();
+            //loadFileDialog.Display();
+
+            //if (saveFileDialog.HasSelected())
+            //{
+            //    std::cout << "Creating file: " << saveFileDialog.GetSelected().string() << std::endl;
+            //    *newLine = Line(pStart, pFinal, SCR_WIDTH, SCR_HEIGHT);
+            //    newLine->writeJSON(saveFileDialog.GetSelected().string(), point_size, spacing_current, clear_color, line_color, lineWidth);
+
+            //    saveFileDialog.ClearSelected();
+            //}
+
+            //if (loadFileDialog.HasSelected())
+            //{
+            //    std::cout << "Selected file: " << loadFileDialog.GetSelected().string() << std::endl;
+
+            //    // this is really ugly
+            //    *newLine = Line(pStart, pFinal, SCR_WIDTH, SCR_HEIGHT);
+            //    if (newLine->readJSON(loadFileDialog.GetSelected().string(), pStart, pFinal, &point_size, &spacing_current, clear_color, line_color, &lineWidth))
+            //    {
+            //        recalculateVertices(pattern[spacing_current], lineWidth, &numOfPixels, &VAO);
+            //    }
+            //    loadFileDialog.ClearSelected();
+            //}
         }
 
         // Rendering
         ImGui::Render();
-        int display_w, display_h;
-        glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
+        glClearColor(clear_color[0], clear_color[1], clear_color[2], clear_color[3]);
         glClear(GL_COLOR_BUFFER_BIT);
 
         glBegin(GL_POINTS);
 
-        Line newLine(pStart, pFinal, SCR_WIDTH, SCR_HEIGHT);
-        float lineColor[] = { 0.0f, 0.0f, 0.0f };
-        std::vector<float> points = newLine.createPoints(0xffffff, 5, lineColor);
+        for (int i = 0; i < onScreen.size(); i++)
+        {
+            onScreen[i]->createPoints();
+        }
 
         glEnd();
 
@@ -138,6 +208,11 @@ int main(void)
     }
 
     // Cleanup
+    for (int i = 0; i < onScreen.size(); i++)
+    {
+        delete onScreen[i];
+    }
+
     ImGui_ImplOpenGL2_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
@@ -147,3 +222,27 @@ int main(void)
 
     return 0;
 }
+
+//void mouse_callback(GLFWwindow* window, int button, int action, int mods)
+//{
+//    // if i use mouse button, clicking anything on imgui window will trigger it as well
+//    if (button == GLFW_MOUSE_BUTTON_LEFT) {
+//        double x;
+//        double y;
+//        glfwGetCursorPos(window, &x, &y);
+//
+//        // opengl set the coordinate from bottom left while glfw is from top left smh
+//        pStart[1] = -1 * (floor(y)) + SCR_HEIGHT;
+//        pStart[0] = floor(x);
+//    }
+//
+//    if (button == GLFW_MOUSE_BUTTON_RIGHT) {
+//        double x;
+//        double y;
+//        glfwGetCursorPos(window, &x, &y);
+//
+//        // opengl set the coordinate from bottom left while glfw is from top left smh
+//        pFinal[1] = -1 * (floor(y)) + SCR_HEIGHT;
+//        pFinal[0] = floor(x);
+//    }
+//}

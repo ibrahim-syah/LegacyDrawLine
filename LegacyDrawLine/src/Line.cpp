@@ -329,7 +329,7 @@ void Line::createPoints()
                 {
                     //std::cout << "case 9 (theta < 45 degree 1st quadrant)" << std::endl;
 
-                    int dU = 2 * dy;
+                    int dR = 2 * dy;
                     int dUR = 2 * (dy - dx);
                     int d = 2 * dy - dx;
 
@@ -347,9 +347,9 @@ void Line::createPoints()
                         }
                         x++;
 
-                        if (d < 0) // M is below the line, pick U
+                        if (d < 0) // M is below the line, pick R
                         {
-                            d = d + dU;
+                            d = d + dR;
                         }
                         else // M is either on the line or above the line, either case pick UR
                         {
@@ -376,7 +376,7 @@ void Line::createPoints()
                     //std::cout << "case 16 (theta < 45 degree 4th quadrant)" << std::endl;
 
                     int dR = 2 * dy;
-                    int dUR = 2 * (dy - dx);
+                    int dDR = 2 * (dy - dx);
                     int d = 2 * dy - dx;
 
                     int x = m_pStart[0];
@@ -397,9 +397,9 @@ void Line::createPoints()
                         {
                             d = d + dR;
                         }
-                        else // M is either on the line or above the line, either case pick UR
+                        else // M is either on the line or above the line, either case pick DR
                         {
-                            d = d + dUR;
+                            d = d + dDR;
                             y--;
                         }
 
@@ -470,8 +470,8 @@ void Line::createPoints()
                 {
                     //std::cout << "case 13 (theta < 45 degree 3rd quadrant)" << std::endl;
 
-                    int dR = 2 * dy;
-                    int dUR = 2 * (dy - dx);
+                    int dL = 2 * dy;
+                    int dDL = 2 * (dy - dx);
                     int d = 2 * dy - dx;
 
                     int x = m_pStart[0];
@@ -488,13 +488,13 @@ void Line::createPoints()
                         }
                         x--;
 
-                        if (d < 0) // M is below the line, pick R
+                        if (d < 0) // M is below the line, pick L
                         {
-                            d = d + dR;
+                            d = d + dL;
                         }
-                        else // M is either on the line or above the line, either case pick UR
+                        else // M is either on the line or above the line, either case pick DL
                         {
-                            d = d + dUR;
+                            d = d + dDL;
                             y--;
                         }
 
@@ -523,7 +523,7 @@ void Line::createPoints()
                 if (m_pFinal[1] > m_pStart[1])
                 {
                     //std::cout << "case 10 (theta > 45 degree 1st quadrant)" << std::endl;
-                    int dR = 2 * dx;
+                    int dU = 2 * dx;
                     int dUR = 2 * (dx - dy);
                     int d = 2 * dx - dy;
 
@@ -541,9 +541,9 @@ void Line::createPoints()
                         }
                         y++;
 
-                        if (d < 0) // M is below the line, pick R
+                        if (d < 0) // M is below the line, pick U
                         {
-                            d = d + dR;
+                            d = d + dU;
                         }
                         else // M is either on the line or above the line, either case pick UR
                         {
@@ -568,8 +568,8 @@ void Line::createPoints()
                 else
                 {
                     //std::cout << "case 15 (theta > 45 degree 4th quadrant)" << std::endl;
-                    int dR = 2 * dx;
-                    int dUR = 2 * (dx - dy);
+                    int dD = 2 * dx;
+                    int dDR = 2 * (dx - dy);
                     int d = 2 * dx - dy;
 
                     int x = m_pStart[0];
@@ -586,13 +586,13 @@ void Line::createPoints()
                         }
                         y--;
 
-                        if (d < 0) // M is below the line, pick R
+                        if (d < 0) // M is below the line, pick D
                         {
-                            d = d + dR;
+                            d = d + dD;
                         }
-                        else // M is either on the line or above the line, either case pick UR
+                        else // M is either on the line or above the line, either case pick DR
                         {
-                            d = d + dUR;
+                            d = d + dDR;
                             x++;
                         }
 
@@ -663,8 +663,8 @@ void Line::createPoints()
                 else
                 {
                     //std::cout << "case 14 (theta > 45 degree 3rd quadrant)" << std::endl;
-                    int dR = 2 * dx;
-                    int dUR = 2 * (dx - dy);
+                    int dD = 2 * dx;
+                    int dDL = 2 * (dx - dy);
                     int d = 2 * dx - dy;
 
                     int x = m_pStart[0];
@@ -682,13 +682,13 @@ void Line::createPoints()
                         }
                         y--;
 
-                        if (d < 0) // M is below the line, pick R
+                        if (d < 0) // M is below the line, pick D
                         {
-                            d = d + dR;
+                            d = d + dD;
                         }
-                        else // M is either on the line or above the line, either case pick UR
+                        else // M is either on the line or above the line, either case pick DL
                         {
-                            d = d + dUR;
+                            d = d + dDL;
                             x--;
                         }
 

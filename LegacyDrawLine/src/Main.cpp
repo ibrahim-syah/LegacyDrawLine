@@ -196,6 +196,14 @@ int main(void)
 
         glBegin(GL_POINTS);
 
+        /*int sampleStartingPoint[2] = { 0, 0 };
+        int sampleFinalPoint[2] = { 1000, 500 };
+
+        Line SampleLine(sampleStartingPoint, sampleFinalPoint, SCR_WIDTH, SCR_HEIGHT, 0xffffff, 5, line_color);
+
+        SampleLine.SampleDDA();
+        SampleLine.createPoints();*/
+
         for (int i = 0; i < onScreen.size(); i++)
         {
             onScreen[i]->createPoints();

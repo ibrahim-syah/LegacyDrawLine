@@ -4,6 +4,7 @@
 #include <iostream>
 #include <string>
 #include <cmath>
+#include <chrono>
 
 #include <GLFW/glfw3.h>
 
@@ -25,6 +26,7 @@ public:
     void convertToNDC(int _x, int _y, float* r_x, float* r_y);
 
     void createPoints();
+    void SampleDDA();
 
     // only use these for transferring it into json!
     int m_pStart[2], m_pFinal[2]; // points coordinate

@@ -328,7 +328,7 @@ void Line::createPoints()
                 if (m_pFinal[1] > m_pStart[1])
                 {
                     //std::cout << "case 9 (theta < 45 degree 1st quadrant)" << std::endl;
-
+                    //auto start = std::chrono::high_resolution_clock::now();
                     int dR = 2 * dy;
                     int dUR = 2 * (dy - dx);
                     int d = 2 * dy - dx;
@@ -370,6 +370,9 @@ void Line::createPoints()
                             curr_pattern = curr_pattern >> 1;
                         }
                     }
+                    /*auto end = std::chrono::high_resolution_clock::now();
+                    std::chrono::duration<float> duration = end - start;
+                    std::cout << "Midpoint took " << duration.count() << "s " << std::endl;*/
                 }
                 else
                 {
@@ -631,7 +634,6 @@ void Line::createPoints()
                         for (int j = 0; j < m_line_width; j++)
                         {
                             this->convertToNDC(x + j, y, &ndc_x, &ndc_y);
-                            std::vector<float> point = { ndc_x, ndc_y, ndc_z };
                             Set(ndc_x, ndc_y, ndc_z);
                         }
                         y++;
@@ -677,7 +679,6 @@ void Line::createPoints()
                         for (int j = 0; j < m_line_width; j++)
                         {
                             this->convertToNDC(x + j, y, &ndc_x, &ndc_y);
-                            std::vector<float> point = { ndc_x, ndc_y, ndc_z };
                             Set(ndc_x, ndc_y, ndc_z);
                         }
                         y--;
@@ -707,6 +708,55 @@ void Line::createPoints()
                     }
                 }
             }
+        }
+    }   
+}
+
+void Line::SampleDDA()
+{
+    glColor3f(m_line_color[0], m_line_color[1], m_line_color[2]);
+    int dx = abs(m_pFinal[0] - m_pStart[0]);
+    int dy = abs(m_pFinal[1] - m_pStart[1]);
+
+    int curr_pattern = m_pattern;
+    int counter = 0;
+    if (dx > dy)
+    {
+        if (m_pStart[0] < m_pFinal[0])
+        {
+            auto start = std::chrono::high_resolution_clock::now();
+            float m = (float(m_pFinal[1]) - float(m_pStart[1])) / (float(m_pFinal[0]) - float(m_pStart[0]));
+            int x = m_pStart[0];
+            float y = m_pStart[1];
+            for (int i = 0; x < m_pFinal[0]; i++)
+            {
+                float ndc_x, ndc_y, ndc_z;
+                ndc_z = (curr_pattern & 0x000001) ? 0.0f : 2.0f; // if it maps to a pattern index of 0, set it outside of the accepted z coordinate
+
+                for (int j = 0; j < m_line_width; j++)
+                {
+                    this->convertToNDC(x, roundf(y) + j, &ndc_x, &ndc_y);
+                    Set(ndc_x, ndc_y, ndc_z);
+                }
+                x++;
+                y = y + m;
+
+                if (counter == 23)
+                {
+                    counter = 0;
+                    curr_pattern = m_pattern;
+                }
+                else
+                {
+                    counter++;
+                    // insert a zero on the left and push every bit to the right, and the rightmost will be thrown away.
+                    // that was not a very technical description for a right bit shift of 1.
+                    curr_pattern = curr_pattern >> 1;
+                }
+            }
+            auto end = std::chrono::high_resolution_clock::now();
+            std::chrono::duration<float> duration = end - start;
+            std::cout << "DDA took " << duration.count() << "s " << std::endl;
         }
     }
 }

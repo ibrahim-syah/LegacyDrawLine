@@ -10,8 +10,8 @@
 #include "Line.h"
 
 // initial setting
-int SCR_WIDTH = 800;
-int SCR_HEIGHT = 800;
+int SCR_WIDTH = 600;
+int SCR_HEIGHT = 600;
 int* pStart = new int[2]{ 0, 0 };
 int* pFinal = new int[2]{ 0, 0 };
 

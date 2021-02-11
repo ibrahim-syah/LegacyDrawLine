@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -117,7 +117,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir)Dependencies\includes;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Dependencies\includes;$(SolutionDir)Dependencies\includes\png;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -157,6 +157,7 @@
     <ClInclude Include="src\vendor\imgui\imstb_rectpack.h" />
     <ClInclude Include="src\vendor\imgui\imstb_textedit.h" />
     <ClInclude Include="src\vendor\imgui\imstb_truetype.h" />
+    <ClInclude Include="src\vendor\stb\stb_write_image.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Line.cpp" />

@@ -4,6 +4,9 @@
 #include "vendor/imgui/imgui_impl_glfw.h"
 #include "vendor/imgui/imgui_impl_opengl2.h"
 #include "vendor/imgui/imfilebrowser.h"
+#define STBI_MSC_SECURE_CRT
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "vendor/stb/stb_write_image.h"
 #include <GLFW/glfw3.h>
 #include <json/json.h>
 
@@ -26,6 +29,9 @@ std::vector<Line*> onScreen; // vector to contain all the lines on currently on 
 bool m_isheld = false;
 int* tempStart = new int[2]{ 0, 0 };
 int* tempFinal = new int[2]{ 0, 0 };
+
+// Disable mouse
+bool draw_state = true;
 
 const char* spacing[] = { // 2^24
         "0 pixel",
@@ -104,20 +110,21 @@ int main(void)
     // Reserve a spot for temp line
     Line* tempLine = new Line(tempStart, tempFinal, SCR_WIDTH, SCR_HEIGHT, pattern[spacing_current], lineWidth, line_color);
     onScreen.push_back(tempLine);
-    
-    //float point_size = 1.0f;
 
-    
-
+    GLubyte* pixels = new GLubyte[600 * 600 * 3];
     
 
     // create a file browser instance
     ImGui::FileBrowser saveFileDialog(ImGuiFileBrowserFlags_EnterNewFilename);
+    ImGui::FileBrowser saveJPGFileDialog(ImGuiFileBrowserFlags_EnterNewFilename);
     ImGui::FileBrowser loadFileDialog;
 
     // (optional) set browser properties
     saveFileDialog.SetTypeFilters({ ".json" });
     saveFileDialog.SetTitle("Save file");
+
+    saveJPGFileDialog.SetTypeFilters({ ".jpg" });
+    saveJPGFileDialog.SetTitle("Save file");
 
     loadFileDialog.SetTypeFilters({ ".json" });
     loadFileDialog.SetTitle("Load file");
@@ -150,31 +157,8 @@ int main(void)
             int width, height;
             glfwGetWindowSize(window, &width, &height);
             ImGui::SetWindowSize(ImVec2(200, height));
-            ImGui::ColorEdit4("Background color", clear_color); // RGBA
-
-            ImGui::Text("These settings are applied on the next draw");
-            ImGui::InputInt2("Starting point", pStart);
-            ImGui::InputInt2("Final point", pFinal);
-            ImGui::ColorEdit3("Line color", line_color); // RGB
-            if (ImGui::IsItemDeactivatedAfterEdit()) {
-                onScreen[0]->m_line_color[0] = line_color[0];
-                onScreen[0]->m_line_color[1] = line_color[1];
-                onScreen[0]->m_line_color[2] = line_color[2];
-            }
-            ImGui::SliderInt("Line width", &lineWidth, 1, 5);
-            if (ImGui::IsItemDeactivatedAfterEdit()) {
-                onScreen[0]->m_line_width = lineWidth;
-            }
-
-            ImGui::Combo("Pixel Spacing", &spacing_current, spacing, IM_ARRAYSIZE(spacing));
-            if (ImGui::IsItemEdited()) {
-                onScreen[0]->m_pattern = pattern[spacing_current];
-            }
-            if (ImGui::Button("Draw line"))
-            {
-                drawline(spacing_current, lineWidth, line_color);
-            }
-            ImGui::SameLine();
+            ImGui::Text("Background color");
+            ImGui::ColorEdit3("##Background color", clear_color); // RGBA
             if (ImGui::Button("Clear screen"))
             {
                 clear_color[0] = 1.0f;
@@ -193,6 +177,38 @@ int main(void)
                 onScreen.push_back(tempLine);
 
             }
+            ImGui::Text("\n");
+            ImGui::Separator();
+            ImGui::Text("\nStarting point");
+            ImGui::InputInt2("##Starting point", pStart);
+            ImGui::Text("Final point");
+            ImGui::InputInt2("##Final point", pFinal);
+            ImGui::Text("\n");
+            ImGui::Separator();
+            ImGui::Text("\nLine color");
+            ImGui::ColorEdit3("##Line color", line_color); // RGB
+            if (ImGui::IsItemDeactivatedAfterEdit()) {
+                onScreen[0]->m_line_color[0] = line_color[0];
+                onScreen[0]->m_line_color[1] = line_color[1];
+                onScreen[0]->m_line_color[2] = line_color[2];
+            }
+            ImGui::Text("Line width");
+            ImGui::SliderInt("##Line width", &lineWidth, 1, 5);
+            if (ImGui::IsItemDeactivatedAfterEdit()) {
+                onScreen[0]->m_line_width = lineWidth;
+            }
+            ImGui::Text("Pixel Spacing");
+            ImGui::Combo("##Pixel Spacing", &spacing_current, spacing, IM_ARRAYSIZE(spacing));
+            if (ImGui::IsItemEdited()) {
+                onScreen[0]->m_pattern = pattern[spacing_current];
+            }
+            if (ImGui::Button("Draw line"))
+            {
+                drawline(spacing_current, lineWidth, line_color);
+            }
+            ImGui::Text("\n");
+            ImGui::Separator();
+            ImGui::Text("\n");
             if (ImGui::Button("Save file"))
             {
                 saveFileDialog.Open();
@@ -203,12 +219,16 @@ int main(void)
                 loadFileDialog.Open();
             }
 
-            ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-            ImGui::Text("pattern %s", std::to_string(onScreen[0]->m_pattern));
+            if (ImGui::Button("Save to JPG"))
+            {
+                glReadPixels(0, 0, 600, 600, GL_RGB, GL_UNSIGNED_BYTE, pixels);
+                saveJPGFileDialog.Open();
+            }
 
             ImGui::End();
 
             saveFileDialog.Display();
+            saveJPGFileDialog.Display();
             loadFileDialog.Display();
 
             if (saveFileDialog.HasSelected())
@@ -217,6 +237,13 @@ int main(void)
                 writeJSON(onScreen, clear_color, saveFileDialog.GetSelected().string());
 
                 saveFileDialog.ClearSelected();
+            }
+            if (saveJPGFileDialog.HasSelected())
+            {
+                std::cout << "Creating file: " << saveFileDialog.GetSelected().string() << std::endl;
+                
+                stbi_write_jpg("tset.jpg", 600, 600, 3, pixels, 100);
+                saveJPGFileDialog.ClearSelected();
             }
 
             if (loadFileDialog.HasSelected())
@@ -234,6 +261,13 @@ int main(void)
                     clear_color[3] = 1.0f;
                 }
                 loadFileDialog.ClearSelected();
+            }
+
+            if (saveFileDialog.IsOpened() || saveJPGFileDialog.IsOpened() || loadFileDialog.IsOpened()) {
+                draw_state = false;
+            }
+            else {
+                draw_state = true;
             }
         }
 
@@ -339,7 +373,7 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 
 void mouse_callback(GLFWwindow* window, int button, int action, int mods)
 {
-    if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
+    if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS && draw_state) {
         double x;
         double y;
         glfwGetCursorPos(window, &x, &y);
@@ -407,7 +441,10 @@ void writeJSON(std::vector<Line*> allLines, float _clear_color[4], std::string f
     std::string document = Json::writeString(wbuilder, root);
 
     std::fstream file;
-    file.open(filename.c_str(), std::ios::out);
+    if (filename.substr(filename.length() - 5, 5) != ".json") {
+        filename += ".json";
+    }
+    file.open((filename).c_str(), std::ios::out);
     if (!file) {
         std::cout << "File not created!" << std::endl;
     }
@@ -482,3 +519,5 @@ void drawline(int spacing_current, int lineWidth, float line_color[]) {
     Line* newLine = new Line(pStart, pFinal, SCR_WIDTH, SCR_HEIGHT, pattern[spacing_current], lineWidth, line_color);
     onScreen.push_back(newLine);
 }
+
+

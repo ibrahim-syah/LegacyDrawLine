@@ -240,9 +240,9 @@ int main(void)
             }
             if (saveJPGFileDialog.HasSelected())
             {
-                std::cout << "Creating file: " << saveFileDialog.GetSelected().string() << std::endl;
+                std::cout << "Creating file: " << saveJPGFileDialog.GetSelected().string() << std::endl;
                 
-                stbi_write_jpg("tset.jpg", 600, 600, 3, pixels, 100);
+                stbi_write_jpg(saveJPGFileDialog.GetSelected().string().c_str(), 600, 600, 3, pixels, 100);
                 saveJPGFileDialog.ClearSelected();
             }
 

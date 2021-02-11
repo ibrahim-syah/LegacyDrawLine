@@ -9,11 +9,41 @@
 
 #include "Line.h"
 
+
+
 // initial setting
-int SCR_WIDTH = 600;
+int SCR_WIDTH = 800;
 int SCR_HEIGHT = 600;
 int* pStart = new int[2]{ 0, 0 };
 int* pFinal = new int[2]{ 0, 0 };
+int lineWidth = 1;
+float line_color[] = { 0.0f, 0.0f, 0.0f };
+int spacing_current = 0;
+
+std::vector<Line*> onScreen; // vector to contain all the lines on currently on the screen
+
+// Temporary Line
+bool m_isheld = false;
+int* tempStart = new int[2]{ 0, 0 };
+int* tempFinal = new int[2]{ 0, 0 };
+
+const char* spacing[] = { // 2^24
+        "0 pixel",
+        "4 pixels",
+        "8 pixel",
+        "12 pixel",
+        "16 pixel",
+        "20 pixel",
+};
+
+const unsigned int pattern[] = {
+    0xffffff,
+    0x0fffff,
+    0x00ffff,
+    0x000fff,
+    0x0000ff,
+    0x00000f,
+};
 
 static void glfw_error_callback(int error, const char* description)
 {
@@ -21,8 +51,10 @@ static void glfw_error_callback(int error, const char* description)
 }
 
 //void mouse_callback(GLFWwindow* window, int button, int action, int mods);
+void drawline(int spacing_current, int lineWidth, float line_color[]);
 void processInput(GLFWwindow* window);
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
+void mouse_callback(GLFWwindow* window, int button, int action, int mods);
 void writeJSON(std::vector<Line*> allLines, float _clear_color[4], std::string filename);
 bool readJSON(std::vector<Line*>* allLines, float _clear_color[4], std::string filename);
 
@@ -37,6 +69,7 @@ int main(void)
 
     // glfw window creation
     // --------------------
+    glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
     GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "Draw Line", NULL, NULL);
     if (window == NULL)
     {
@@ -47,6 +80,7 @@ int main(void)
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1); // Enable vsync
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+    glfwSetMouseButtonCallback(window, mouse_callback);
 
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
@@ -57,6 +91,7 @@ int main(void)
 
     // Setup Dear ImGui style
     ImGui::StyleColorsDark();
+    ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(ImColor(15, 15, 15)));
     //ImGui::StyleColorsClassic();
 
     // Setup Platform/Renderer backends
@@ -65,29 +100,16 @@ int main(void)
 
     // Our initial state
     float clear_color[] = { 1.0f, 1.0f, 1.0f, 1.0f };
-    float line_color[] = { 0.0f, 0.0f, 0.0f };
+
+    // Reserve a spot for temp line
+    Line* tempLine = new Line(tempStart, tempFinal, SCR_WIDTH, SCR_HEIGHT, pattern[spacing_current], lineWidth, line_color);
+    onScreen.push_back(tempLine);
+    
     //float point_size = 1.0f;
-    int lineWidth = 1;
-    int spacing_current = 0;
-    const char* spacing[] = { // 2^24
-        "0 pixel",
-        "4 pixels",
-        "8 pixel",
-        "12 pixel",
-        "16 pixel",
-        "20 pixel",
-    };
 
-    const unsigned int pattern[] = {
-        0xffffff,
-        0x0fffff,
-        0x00ffff,
-        0x000fff,
-        0x0000ff,
-        0x00000f,
-    };
+    
 
-    std::vector<Line*> onScreen; // vector to contain all the lines on currently on the screen
+    
 
     // create a file browser instance
     ImGui::FileBrowser saveFileDialog(ImGuiFileBrowserFlags_EnterNewFilename);
@@ -116,21 +138,41 @@ int main(void)
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
+        // Setting imgui flags
+        ImGuiWindowFlags window_flags = 0;
+        window_flags |= ImGuiWindowFlags_NoMove;
+        window_flags |= ImGuiWindowFlags_NoResize;
+        window_flags |= ImGuiWindowFlags_NoCollapse;
+
         {
-            ImGui::Begin("Draw Line"); // Create a window called "Hello, world!" and append into it.
+            ImGui::Begin("Draw Line", (bool*)0, window_flags); // Create a window called "Hello, world!" and append into it.
+            ImGui::SetWindowPos(ImVec2(600, 0));
+            int width, height;
+            glfwGetWindowSize(window, &width, &height);
+            ImGui::SetWindowSize(ImVec2(200, height));
             ImGui::ColorEdit4("Background color", clear_color); // RGBA
 
             ImGui::Text("These settings are applied on the next draw");
             ImGui::InputInt2("Starting point", pStart);
             ImGui::InputInt2("Final point", pFinal);
             ImGui::ColorEdit3("Line color", line_color); // RGB
+            if (ImGui::IsItemDeactivatedAfterEdit()) {
+                onScreen[0]->m_line_color[0] = line_color[0];
+                onScreen[0]->m_line_color[1] = line_color[1];
+                onScreen[0]->m_line_color[2] = line_color[2];
+            }
             ImGui::SliderInt("Line width", &lineWidth, 1, 5);
+            if (ImGui::IsItemDeactivatedAfterEdit()) {
+                onScreen[0]->m_line_width = lineWidth;
+            }
 
             ImGui::Combo("Pixel Spacing", &spacing_current, spacing, IM_ARRAYSIZE(spacing));
+            if (ImGui::IsItemEdited()) {
+                onScreen[0]->m_pattern = pattern[spacing_current];
+            }
             if (ImGui::Button("Draw line"))
             {
-                Line* newLine = new Line(pStart, pFinal, SCR_WIDTH, SCR_HEIGHT, pattern[spacing_current], lineWidth, line_color);
-                onScreen.push_back(newLine);
+                drawline(spacing_current, lineWidth, line_color);
             }
             ImGui::SameLine();
             if (ImGui::Button("Clear screen"))
@@ -140,12 +182,16 @@ int main(void)
                 clear_color[2] = 1.0f;
                 clear_color[3] = 1.0f;
 
-                for (int i = 0; i < onScreen.size(); i++)
+                for (int i = 1; i < onScreen.size(); i++)
                 {
                     delete onScreen[i];
                 }
 
                 onScreen.clear();
+                // Reserve a spot for temp line (again)
+                Line* tempLine = new Line(tempStart, tempFinal, SCR_WIDTH, SCR_HEIGHT, pattern[spacing_current], lineWidth, line_color);
+                onScreen.push_back(tempLine);
+
             }
             if (ImGui::Button("Save file"))
             {
@@ -158,6 +204,8 @@ int main(void)
             }
 
             ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+            ImGui::Text("pattern %s", std::to_string(onScreen[0]->m_pattern));
+
             ImGui::End();
 
             saveFileDialog.Display();
@@ -204,7 +252,14 @@ int main(void)
         SampleLine.SampleDDA();
         SampleLine.createPoints();*/
 
-        for (int i = 0; i < onScreen.size(); i++)
+        if (m_isheld) {
+            double xpos, ypos;
+            glfwGetCursorPos(window, &xpos, &ypos);
+            onScreen[0]->m_pFinal[0] = xpos;
+            onScreen[0]->m_pFinal[1] = -1 * (floor(ypos)) + SCR_HEIGHT;
+            onScreen[0]->createPoints();
+        }
+        for (int i = 1; i < onScreen.size(); i++)
         {
             onScreen[i]->createPoints();
         }
@@ -282,29 +337,37 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
     SCR_HEIGHT = height;
 }
 
-//void mouse_callback(GLFWwindow* window, int button, int action, int mods)
-//{
-//    // if i use mouse button, clicking anything on imgui window will trigger it as well
-//    if (button == GLFW_MOUSE_BUTTON_LEFT) {
-//        double x;
-//        double y;
-//        glfwGetCursorPos(window, &x, &y);
-//
-//        // opengl set the coordinate from bottom left while glfw is from top left smh
-//        pStart[1] = -1 * (floor(y)) + SCR_HEIGHT;
-//        pStart[0] = floor(x);
-//    }
-//
-//    if (button == GLFW_MOUSE_BUTTON_RIGHT) {
-//        double x;
-//        double y;
-//        glfwGetCursorPos(window, &x, &y);
-//
-//        // opengl set the coordinate from bottom left while glfw is from top left smh
-//        pFinal[1] = -1 * (floor(y)) + SCR_HEIGHT;
-//        pFinal[0] = floor(x);
-//    }
-//}
+void mouse_callback(GLFWwindow* window, int button, int action, int mods)
+{
+    if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
+        double x;
+        double y;
+        glfwGetCursorPos(window, &x, &y);
+
+        if (x < 600){
+            // opengl set the coordinate from bottom left while glfw is from top left smh
+            pStart[1] = -1 * (floor(y)) + SCR_HEIGHT;
+            pStart[0] = floor(x);
+            onScreen[0]->m_pStart[1]= -1 * (floor(y)) + SCR_HEIGHT;
+            onScreen[0]->m_pStart[0] = floor(x);
+            m_isheld = true;
+        }
+    }
+
+    if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_RELEASE) {
+        double x;
+        double y;
+        glfwGetCursorPos(window, &x, &y);
+
+        if (m_isheld == true) {
+            // opengl set the coordinate from bottom left while glfw is from top left smh
+            pFinal[1] = -1 * (floor(y)) + SCR_HEIGHT;
+            pFinal[0] = floor(x);
+            m_isheld = false;
+            drawline(spacing_current, lineWidth, line_color);
+        }
+    }
+}
 
 void writeJSON(std::vector<Line*> allLines, float _clear_color[4], std::string filename)
 {
@@ -413,4 +476,9 @@ bool readJSON(std::vector<Line*>* allLines, float _clear_color[4], std::string f
         file.close();
         return true;
     }
+}
+
+void drawline(int spacing_current, int lineWidth, float line_color[]) {
+    Line* newLine = new Line(pStart, pFinal, SCR_WIDTH, SCR_HEIGHT, pattern[spacing_current], lineWidth, line_color);
+    onScreen.push_back(newLine);
 }

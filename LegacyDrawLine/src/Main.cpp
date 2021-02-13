@@ -159,15 +159,12 @@ int main(void)
             ImGui::SetWindowSize(ImVec2(200, height));
             ImGui::Text("Background color");
             ImGui::ColorEdit3("##Background color", clear_color); // RGBA
-            if (ImGui::IsItemActive()) {
-                draw_state = false;
-            }
-            else if (!ImGui::IsWindowFocused(ImGuiFocusedFlags_RootWindow && ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows))) {
-                draw_state = true;
-            }
-            
             if (ImGui::Button("Clear screen"))
             {
+                clear_color[0] = 1.0f;
+                clear_color[1] = 1.0f;
+                clear_color[2] = 1.0f;
+                clear_color[3] = 1.0f;
 
                 for (int i = 1; i < onScreen.size(); i++)
                 {
@@ -179,7 +176,7 @@ int main(void)
                 Line* tempLine = new Line(tempStart, tempFinal, SCR_WIDTH, SCR_HEIGHT, pattern[spacing_current], lineWidth, line_color);
                 onScreen.push_back(tempLine);
 
-            }   
+            }
             ImGui::Text("\n");
             ImGui::Separator();
             ImGui::Text("\nStarting point");
@@ -194,12 +191,6 @@ int main(void)
                 onScreen[0]->m_line_color[0] = line_color[0];
                 onScreen[0]->m_line_color[1] = line_color[1];
                 onScreen[0]->m_line_color[2] = line_color[2];
-            }
-            if (ImGui::IsItemActive()) {
-                draw_state = false;
-            }
-            else if (!ImGui::IsWindowFocused(ImGuiFocusedFlags_RootWindow && ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows))) {
-                draw_state = true;
             }
             ImGui::Text("Line width");
             ImGui::SliderInt("##Line width", &lineWidth, 1, 5);
@@ -234,7 +225,6 @@ int main(void)
                 saveJPGFileDialog.Open();
             }
 
-
             ImGui::End();
 
             saveFileDialog.Display();
@@ -255,7 +245,7 @@ int main(void)
                     filename += ".jpg";
                 }
                 std::cout << "Creating file: " << filename << std::endl;
-                stbi_flip_vertically_on_write(1);
+                
                 stbi_write_jpg(filename.c_str(), 600, 600, 3, pixels, 100);
                 saveJPGFileDialog.ClearSelected();
             }
@@ -277,12 +267,12 @@ int main(void)
                 loadFileDialog.ClearSelected();
             }
 
-            /*if (saveFileDialog.IsOpened() || saveJPGFileDialog.IsOpened() || loadFileDialog.IsOpened()) {
+            if (saveFileDialog.IsOpened() || saveJPGFileDialog.IsOpened() || loadFileDialog.IsOpened()) {
                 draw_state = false;
             }
             else {
                 draw_state = true;
-            }*/
+            }
         }
 
         // Rendering

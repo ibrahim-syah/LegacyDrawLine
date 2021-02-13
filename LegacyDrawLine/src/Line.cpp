@@ -44,15 +44,20 @@ void Line::createPoints()
 
     int counter = 0;
     curr_pattern = m_pattern;
+    int pivot_point = floor(m_line_width / 2);
 
     glColor3f(m_line_color[0], m_line_color[1], m_line_color[2]);
 
     if (m_pStart[0] == m_pFinal[0] && m_pStart[1] == m_pFinal[1]) // a single point
     {
-        float ndc_x, ndc_y;
-        this->convertToNDC(m_pStart[0], m_pStart[1], &ndc_x, &ndc_y);
-        Set(ndc_x, ndc_y, 0.0f);
-        //std::cout << "case 0 (point)" << std::endl;
+        for (int j = 0; j < m_line_width; j++) {
+            for (int k = 0; k < m_line_width; k++) {
+                float ndc_x, ndc_y;
+                this->convertToNDC(m_pStart[0] + k - pivot_point, m_pStart[1] + j - pivot_point, &ndc_x, &ndc_y);
+                Set(ndc_x, ndc_y, 0.0f);
+                //std::cout << "case 0 (point)" << std::endl;
+            }
+        }
     }
     else if (m_pStart[1] == m_pFinal[1]) // horizontal line
     {
@@ -69,7 +74,7 @@ void Line::createPoints()
 
                 for (int j = 0; j < m_line_width; j++)
                 {
-                    this->convertToNDC(x, yvalue + j, &ndc_x, &ndc_y);
+                    this->convertToNDC(x, yvalue + j - pivot_point, &ndc_x, &ndc_y);
                     Set(ndc_x, ndc_y, ndc_z);
                 }
                 x++;
@@ -99,7 +104,7 @@ void Line::createPoints()
 
                 for (int j = 0; j < m_line_width; j++)
                 {
-                    this->convertToNDC(x, yvalue + j, &ndc_x, &ndc_y);
+                    this->convertToNDC(x, yvalue + j - pivot_point, &ndc_x, &ndc_y);
                     Set(ndc_x, ndc_y, ndc_z);
                 }
                 x++;
@@ -133,7 +138,7 @@ void Line::createPoints()
 
                 for (int j = 0; j < m_line_width; j++)
                 {
-                    this->convertToNDC(xvalue + j, y, &ndc_x, &ndc_y);
+                    this->convertToNDC(xvalue + j - pivot_point, y, &ndc_x, &ndc_y);
                     Set(ndc_x, ndc_y, ndc_z);
                 }
                 y++;
@@ -163,7 +168,7 @@ void Line::createPoints()
 
                 for (int j = 0; j < m_line_width; j++)
                 {
-                    this->convertToNDC(xvalue + j, y, &ndc_x, &ndc_y);
+                    this->convertToNDC(xvalue + j - pivot_point, y, &ndc_x, &ndc_y);
                     Set(ndc_x, ndc_y, ndc_z);
                 }
                 y++;
@@ -201,7 +206,7 @@ void Line::createPoints()
 
                     for (int j = 0; j < m_line_width; j++)
                     {
-                        this->convertToNDC(x, y + j, &ndc_x, &ndc_y);
+                        this->convertToNDC(x, y + j - pivot_point, &ndc_x, &ndc_y);
                         Set(ndc_x, ndc_y, ndc_z);
                     }
                     x++;
@@ -231,7 +236,7 @@ void Line::createPoints()
 
                     for (int j = 0; j < m_line_width; j++)
                     {
-                        this->convertToNDC(x, y + j, &ndc_x, &ndc_y);
+                        this->convertToNDC(x, y + j - pivot_point, &ndc_x, &ndc_y);
                         Set(ndc_x, ndc_y, ndc_z);
                     }
                     x++;
@@ -264,7 +269,7 @@ void Line::createPoints()
 
                     for (int j = 0; j < m_line_width; j++)
                     {
-                        this->convertToNDC(x, y + j, &ndc_x, &ndc_y);
+                        this->convertToNDC(x, y + j - pivot_point, &ndc_x, &ndc_y);
                         Set(ndc_x, ndc_y, ndc_z);
                     }
                     x--;
@@ -294,7 +299,7 @@ void Line::createPoints()
 
                     for (int j = 0; j < m_line_width; j++)
                     {
-                        this->convertToNDC(x, y + j, &ndc_x, &ndc_y);
+                        this->convertToNDC(x, y + j-pivot_point, &ndc_x, &ndc_y);
                         Set(ndc_x, ndc_y, ndc_z);
                     }
                     x--;
@@ -342,7 +347,7 @@ void Line::createPoints()
 
                         for (int j = 0; j < m_line_width; j++)
                         {
-                            this->convertToNDC(x, y + j, &ndc_x, &ndc_y);
+                            this->convertToNDC(x, y + j-pivot_point, &ndc_x, &ndc_y);
                             Set(ndc_x, ndc_y, ndc_z);
                         }
                         x++;
@@ -391,7 +396,7 @@ void Line::createPoints()
 
                         for (int j = 0; j < m_line_width; j++)
                         {
-                            this->convertToNDC(x, y + j, &ndc_x, &ndc_y);
+                            this->convertToNDC(x, y + j-pivot_point, &ndc_x, &ndc_y);
                             Set(ndc_x, ndc_y, ndc_z);
                         }
                         x++;
@@ -440,7 +445,7 @@ void Line::createPoints()
 
                         for (int j = 0; j < m_line_width; j++)
                         {
-                            this->convertToNDC(x, y + j, &ndc_x, &ndc_y);
+                            this->convertToNDC(x, y + j - pivot_point, &ndc_x, &ndc_y);
                             Set(ndc_x, ndc_y, ndc_z);
                         }
                         x--;
@@ -486,7 +491,7 @@ void Line::createPoints()
 
                         for (int j = 0; j < m_line_width; j++)
                         {
-                            this->convertToNDC(x, y + j, &ndc_x, &ndc_y);
+                            this->convertToNDC(x, y + j - pivot_point, &ndc_x, &ndc_y);
                             Set(ndc_x, ndc_y, ndc_z);
                         }
                         x--;
@@ -539,7 +544,7 @@ void Line::createPoints()
 
                         for (int j = 0; j < m_line_width; j++)
                         {
-                            this->convertToNDC(x + j, y, &ndc_x, &ndc_y);
+                            this->convertToNDC(x + j - pivot_point, y, &ndc_x, &ndc_y);
                             Set(ndc_x, ndc_y, ndc_z);
                         }
                         y++;
@@ -584,7 +589,7 @@ void Line::createPoints()
 
                         for (int j = 0; j < m_line_width; j++)
                         {
-                            this->convertToNDC(x + j, y, &ndc_x, &ndc_y);
+                            this->convertToNDC(x + j - pivot_point, y, &ndc_x, &ndc_y);
                             Set(ndc_x, ndc_y, ndc_z);
                         }
                         y--;
@@ -633,7 +638,7 @@ void Line::createPoints()
 
                         for (int j = 0; j < m_line_width; j++)
                         {
-                            this->convertToNDC(x + j, y, &ndc_x, &ndc_y);
+                            this->convertToNDC(x + j - pivot_point, y, &ndc_x, &ndc_y);
                             Set(ndc_x, ndc_y, ndc_z);
                         }
                         y++;
@@ -678,7 +683,7 @@ void Line::createPoints()
 
                         for (int j = 0; j < m_line_width; j++)
                         {
-                            this->convertToNDC(x + j, y, &ndc_x, &ndc_y);
+                            this->convertToNDC(x + j - pivot_point, y, &ndc_x, &ndc_y);
                             Set(ndc_x, ndc_y, ndc_z);
                         }
                         y--;

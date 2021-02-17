@@ -32,7 +32,6 @@ int* tempFinal = new int[2]{ 0, 0 };
 
 // Disable mouse
 bool draw_state = true;
-bool isFileBrowserOpen = false;
 
 const char* spacing[] = { // 2^24
         "0 pixel",
@@ -160,10 +159,10 @@ int main(void)
             ImGui::SetWindowSize(ImVec2(200, height));
             ImGui::Text("Background color");
             ImGui::ColorEdit3("##Background color", clear_color); // RGBA
-            if (ImGui::IsItemActive() || isFileBrowserOpen) {
+            if (ImGui::IsItemActive()) {
                 draw_state = false;
             }
-            else if (!ImGui::IsWindowFocused(ImGuiFocusedFlags_RootWindow && ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows)) && !isFileBrowserOpen) {
+            else if (!ImGui::IsWindowFocused(ImGuiFocusedFlags_RootWindow && ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows))) {
                 draw_state = true;
             }
             
@@ -196,10 +195,10 @@ int main(void)
                 onScreen[0]->m_line_color[1] = line_color[1];
                 onScreen[0]->m_line_color[2] = line_color[2];
             }
-            if (ImGui::IsItemActive() || isFileBrowserOpen) {
+            if (ImGui::IsItemActive()) {
                 draw_state = false;
             }
-            else if (!ImGui::IsWindowFocused(ImGuiFocusedFlags_RootWindow && ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows)) && !isFileBrowserOpen) {
+            else if (!ImGui::IsWindowFocused(ImGuiFocusedFlags_RootWindow && ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows))) {
                 draw_state = true;
             }
             ImGui::Text("Line width");
@@ -279,10 +278,10 @@ int main(void)
             }
 
             if (saveFileDialog.IsOpened() || saveJPGFileDialog.IsOpened() || loadFileDialog.IsOpened()) {
-                isFileBrowserOpen = true;
+                draw_state = false;
             }
             else {
-                isFileBrowserOpen = false;
+                draw_state = true;
             }
         }
 

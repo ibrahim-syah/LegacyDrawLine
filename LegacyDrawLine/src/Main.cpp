@@ -277,12 +277,12 @@ int main(void)
                 loadFileDialog.ClearSelected();
             }
 
-            /*if (saveFileDialog.IsOpened() || saveJPGFileDialog.IsOpened() || loadFileDialog.IsOpened()) {
+            if (saveFileDialog.IsOpened() || saveJPGFileDialog.IsOpened() || loadFileDialog.IsOpened()) {
                 draw_state = false;
             }
             else {
                 draw_state = true;
-            }*/
+            }
         }
 
         // Rendering
